@@ -1,0 +1,14 @@
+# /etc/systemd/system/impetus.timer
+# Example only. Runs the tick every 25 minutes. If you run a second persona, give its timer a
+# different OnBootSec so the two do not start at the same moment.
+# Enable with: systemctl enable --now impetus.timer
+[Unit]
+Description=Run Impetus every 25 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=25min
+Unit=impetus.service
+
+[Install]
+WantedBy=timers.target

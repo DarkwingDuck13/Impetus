@@ -1,0 +1,10 @@
+# /etc/systemd/system/impetus.service
+# Example only: change the paths and, if you run more than one persona, make a copy per
+# persona with its own --config (for example impetus-second.service).
+[Unit]
+Description=Impetus tick (one pass of the drive system)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/impetus
+ExecStart=/usr/bin/python3 /opt/impetus/impetus.py --config /opt/impetus/impetus_config.json tick

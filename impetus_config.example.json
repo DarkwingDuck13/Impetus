@@ -1,0 +1,81 @@
+{
+  "persona": "Companion",
+  "user_name": "User",
+  "state_path": "impetus_state.json",
+  "private_path": "impetus_private.jsonl",
+  "action_log_path": "impetus_actions.log",
+  "ratings_path": "",
+  "persona_file": "",
+  "ollama_url": "http://localhost:11434",
+  "model": "",
+  "num_ctx": 0,
+  "keep_alive": "5m",
+  "quiet_hours": [
+    1,
+    7
+  ],
+  "min_gap_minutes": 90,
+  "rest_cooldown_minutes": 60,
+  "max_actions_per_day": 6,
+  "wake_threshold": 0.45,
+  "max_text_chars": 600,
+  "think": false,
+  "num_predict": 400,
+  "drives": {
+    "curiosity": {
+      "rise_per_hour": 0.04,
+      "cap": 0.85,
+      "start": 0.3
+    },
+    "connection": {
+      "rise_per_hour": 0.05,
+      "cap": 0.85,
+      "start": 0.3
+    },
+    "expression": {
+      "rise_per_hour": 0.03,
+      "cap": 0.85,
+      "start": 0.3
+    },
+    "amusement": {
+      "rise_per_hour": 0.035,
+      "cap": 0.85,
+      "start": 0.3
+    },
+    "introspection": {
+      "rise_per_hour": 0.03,
+      "cap": 0.85,
+      "start": 0.3
+    }
+  },
+  "effects": {
+    "diary": {
+      "expression": 0.5,
+      "introspection": 0.15
+    },
+    "reflect": {
+      "curiosity": 0.5,
+      "introspection": 0.15
+    },
+    "note": {
+      "connection": 0.25,
+      "expression": 0.2
+    },
+    "introspect": {
+      "introspection": 0.5
+    },
+    "play": {
+      "amusement": 0.5
+    },
+    "fantasize": {
+      "amusement": 0.3
+    },
+    "rest": {}
+  },
+  "contact_eases_connection_to": 0.1,
+  "contact_file": "",
+  "contact_quiet_minutes": 20,
+  "contact_history_file": "",
+  "rhythm_min_contacts": 10,
+  "rhythm_days": 60
+}

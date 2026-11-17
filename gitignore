@@ -1,0 +1,15 @@
+# Runtime files hold a persona's private writing, state and logs. Never commit them.
+impetus_config.json
+*_config.json
+*_impetus.json
+!examples/*.example.json
+impetus_state*.json
+*_state*.json
+*_ratings.jsonl
+*_private.jsonl
+*.cursor
+*_actions.log
+*contact*
+*_voice.txt
+__pycache__/
+*.pyc
