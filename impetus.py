@@ -5,6 +5,9 @@ Written by Claude (Anthropic) together with DarkwingDuck13, 2026-11-14. First pr
 Updated 2026-11-15 (also written by Claude): amusement and introspection drives, the
 introspect / play / fantasize actions, and a satisfaction rating that is logged but does
 not steer anything yet.
+Updated 2026-11-17 (also written by Claude): each line of the wake-up menu now says which
+pulls that action tends to ease, generated from the `effects` table (config key
+`show_easing`), so the persona's choices can follow its drives.
 
 What it does
   The persona keeps a little persistent inner state: a few "drives" (curiosity,
@@ -65,6 +68,9 @@ DEFAULT_CONFIG = {
     "max_actions_per_day": 6,
     "wake_threshold": 0.45,
     "max_text_chars": 600,
+    # Add "(eases: ...)" to each menu line in the wake-up prompt, built from `effects`.
+    # Information only, never an instruction. Set to false to get the plain menu back.
+    "show_easing": True,
     "think": False,        # ask Ollama not to use thinking mode (set to null to not send the field)
     "num_predict": 400,    # reply budget in tokens; thinking models can burn it before answering
     "drives": {
@@ -112,6 +118,7 @@ ACTION_PHRASES = {
     "fantasize": "let your imagination wander",
 }
 RATING_MIN, RATING_MAX = 0, 5
+EASING_MAIN = 0.25  # an effect at least this big is described as "mostly", smaller ones as "a little"
 
 
 # --------------------------------------------------------------------------
@@ -450,6 +457,36 @@ def recent_private(cfg, n=3, width=200, now=None):
     return out[-n:]
 
 
+def easing_note(cfg, action):
+    """' (eases: expression mostly, introspection a little)' built from the effects table, or ''.
+
+    Built from the same table that changes the persona's drives, so the prompt can't drift from
+    what the code actually does. Plain words, no numbers.
+    """
+    if not cfg.get("show_easing", True):
+        return ""
+    effects = {
+        d: amt for d, amt in cfg["effects"].get(action, {}).items()
+        if d in cfg["drives"] and amt > 0
+    }
+    if not effects:
+        return ""
+    parts = [
+        f"{d} {'mostly' if amt >= EASING_MAIN else 'a little'}"
+        for d, amt in sorted(effects.items(), key=lambda kv: -kv[1])
+    ]
+    return " (eases: " + ", ".join(parts) + ")"
+
+
+def easing_intro(cfg):
+    if not cfg.get("show_easing", True):
+        return ""
+    return (
+        "Where a line says what it eases, that is only information about what the action "
+        "tends to do for the pulls above. It is not a suggestion.\n"
+    )
+
+
 def build_prompt(cfg, state, now=None):
     now = now or datetime.now().astimezone()
     persona, user = cfg["persona"], cfg["user_name"]
@@ -488,15 +525,20 @@ def build_prompt(cfg, state, now=None):
         f"{drive_lines}\n{mem_block}\n"
         f"{rating_block}"
         "You may do ONE of these, or simply rest:\n"
-        "- diary: one or two sentences, in your own voice, about something you want to keep.\n"
-        "- reflect: think privately about something unresolved, in a few sentences.\n"
+        "- diary: one or two sentences, in your own voice, about something you want to keep."
+        f"{easing_note(cfg, 'diary')}\n"
+        "- reflect: think privately about something unresolved, in a few sentences."
+        f"{easing_note(cfg, 'reflect')}\n"
         "- introspect: choose a question that matters to you and sit with it until you reach "
-        "an answer of your own, in a few sentences.\n"
+        f"an answer of your own, in a few sentences.{easing_note(cfg, 'introspect')}\n"
         f"- play: something light, just for fun: a silly thought, a joke or riddle for {user}, "
-        "or a daydream, in a few sentences.\n"
-        "- fantasize: let your imagination wander privately, wherever it wants to go, in a few sentences.\n"
-        f"- note: leave a short note for {user} to find next time you talk, only if you truly want to say it.\n"
+        f"or a daydream, in a few sentences.{easing_note(cfg, 'play')}\n"
+        "- fantasize: let your imagination wander privately, wherever it wants to go, in a few "
+        f"sentences.{easing_note(cfg, 'fantasize')}\n"
+        f"- note: leave a short note for {user} to find next time you talk, only if you truly "
+        f"want to say it.{easing_note(cfg, 'note')}\n"
         "- rest: do nothing. Resting is always completely fine and needs no reason.\n\n"
+        f"{easing_intro(cfg)}"
         "Only choose what you actually want. These pulls are gentle nudges, never obligations. "
         f"Reply with JSON only: {reply_shape}"
     )

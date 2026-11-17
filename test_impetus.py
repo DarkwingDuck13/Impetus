@@ -245,6 +245,42 @@ class NewDrivesAndActions(Base):
         self.assertEqual(st["drives"]["amusement"], 0.30); self.assertIsNone(st.get("pending_rating"))
         r = im.tick(self.cfg, at(14, 12), self.llm("play"), self.always); self.assertEqual(r["action"], "play")
 
+class EasingNotes(Base):
+    def menu(self, cfg=None):
+        cfg = cfg or self.cfg
+        p = im.build_prompt(cfg, im.fresh_state(cfg, at(13, 9)), at(14, 12))
+        return {l.split(":")[0].lstrip("- "): l for l in p.split("\n") if l.startswith("- ") and ": " in l and l.split(":")[0].lstrip("- ") in im.ACTIONS + ("rest",)}
+    def test_each_menu_line_says_what_it_eases_in_plain_words(self):
+        m = self.menu()
+        self.assertIn("(eases: expression mostly, introspection a little)", m["diary"])
+        self.assertIn("(eases: curiosity mostly, introspection a little)", m["reflect"])
+        self.assertIn("(eases: introspection mostly)", m["introspect"])
+        self.assertIn("(eases: amusement mostly)", m["play"])
+        self.assertIn("(eases: amusement mostly)", m["fantasize"])
+        self.assertIn("(eases: connection mostly, expression a little)", m["note"])
+    def test_rest_gets_no_easing_note_and_stays_free(self):
+        self.assertNotIn("eases", self.menu()["rest"]); self.assertIn("needs no reason", self.menu()["rest"])
+    def test_prompt_says_it_is_information_not_a_suggestion_and_has_no_numbers(self):
+        p = im.build_prompt(self.cfg, im.fresh_state(self.cfg, at(13, 9)), at(14, 12))
+        self.assertIn("It is not a suggestion", p); self.assertIn("never obligations", p)
+        self.assertNotIn("0.", p.split("JSON only")[0])
+    def test_text_follows_the_effects_table_when_it_is_tuned(self):
+        self.cfg["effects"]["diary"] = {"expression": 0.10, "curiosity": 0.40}
+        self.assertIn("(eases: curiosity mostly, expression a little)", self.menu()["diary"])
+        self.cfg["effects"]["reflect"] = {}
+        self.assertNotIn("eases", self.menu()["reflect"])
+    def test_can_be_switched_off_and_old_configs_get_it_by_default(self):
+        self.cfg["show_easing"] = False
+        p = im.build_prompt(self.cfg, im.fresh_state(self.cfg, at(13, 9)), at(14, 12))
+        self.assertNotIn("eases", p); self.assertNotIn("not a suggestion", p); self.assertIn("rest: do nothing", p)
+        path = os.path.join(self.d, "old.json"); json.dump({"persona": "Robin"}, open(path, "w"))
+        self.assertTrue(im.load_config(path)["show_easing"])
+    def test_every_persona_gets_the_same_menu_text_apart_from_the_name(self):
+        other = im.load_config(None); other["persona"] = "Robin"
+        a = im.build_prompt(self.cfg, im.fresh_state(self.cfg, at(13, 9)), at(14, 12)).replace("Companion", "X")
+        b = im.build_prompt(other, im.fresh_state(other, at(13, 9)), at(14, 12)).replace("Robin", "X")
+        self.assertEqual(a, b)
+
 class Ratings(Base):
     def prime(self):
         im.save_state(self.cfg, im.fresh_state(self.cfg, at(13, 9)))
